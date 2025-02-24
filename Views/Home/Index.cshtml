@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML to JSON Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .highlight {
+            background-color: #fde68a;
+            font-weight: 600;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            border-radius: 4px;
+        }
+
+        .dropdown:hover .dropdown-content,
+        .dropdown-content:hover {
+            display: block;
+        }
+
+        .extra-enums.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+
+        spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        const config = {
+            rowsPerPage: 5,
+            maxEnumerations: 5,
+            defaultUrl: 'https://receiptservice.egretail.cloud/ARTSPOSLogSchema/6.0.0',
+            defaultVersion: 'Version 6.0.0'
+        };
+
+        let data = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let currentUrl = config.defaultUrl;
+        let currentVersion = config.defaultVersion;
+        let currentQuery = '';
+
+        async function fetchAndRenderData()
+        {
+            try
+            {
+                showLoadingSpinner();
+                const response = await fetch('/api/xmltojson/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ XmlDataUrl: currentUrl })
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch data');
+                data = await response.json();
+                filteredData = [...data.simpleTypes, ...data.complexTypes];
+                renderTable();
+            } catch (error)
+            {
+                console.error('Error:', error);
+                alert('Failed to fetch data from the API.');
+            } finally
+            {
+                hideLoadingSpinner();
+            }
+        }
+
+        function filterData(query)
+        {
+            currentQuery = query.toLowerCase();
+            filteredData = [...data.simpleTypes, ...data.complexTypes].filter(type =>
+            {
+                const typeMatch = type.name?.toLowerCase().includes(query) || type.description?.toLowerCase().includes(query);
+                const enumMatch = type.enumerations?.some(e => e.value?.toLowerCase().includes(query) || e.description?.toLowerCase().includes(query));
+                const nestedMatch = type.nestedElements?.some(e => e.name?.toLowerCase().includes(query));
+                return typeMatch || enumMatch || nestedMatch;
+            });
+            currentPage = 1;
+            renderTable();
+        }
+
+        function toggleSeeMore(index)
+        {
+            const extraEnums = document.getElementById(`extra-enums-${index}`);
+            const seeMoreBtn = document.getElementById(`see-more-btn-${index}`);
+            extraEnums.classList.toggle('hidden');
+            seeMoreBtn.textContent = extraEnums.classList.contains('hidden') ? 'See More' : 'See Less';
+        }
+
+        function highlightText(text, query)
+        {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function renderTable()
+        {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            const paginatedData = filteredData.slice((currentPage - 1) * config.rowsPerPage, currentPage * config.rowsPerPage);
+
+            paginatedData.forEach((type, index) =>
+            {
+                if (type.name === 'N/A' && type.description === 'N/A') return;
+
+                const enumerations = type.enumerations || [];
+                const firstFiveEnums = enumerations.slice(0, config.maxEnumerations);
+                const remainingEnums = enumerations.slice(config.maxEnumerations);
+
+                const hasMatchInRemaining = currentQuery && remainingEnums.some(e =>
+                    e.value.toLowerCase().includes(currentQuery) || e.description.toLowerCase().includes(currentQuery)
+                );
+
+                tableBody.innerHTML += `
+                    <tr class="bg-white hover:bg-gray-50 transition duration-200">
+                        ${type.name !== 'N/A' ? `<td class="border px-4 py-3 font-medium">${highlightText(type.name, currentQuery)}</td>` : '<td></td>'}
+                        <td class="border px-4 py-3">
+                            ${type.description && type.description !== 'N/A' ? `<p class="text-gray-700">${highlightText(type.description, currentQuery)}</p>` : ''}
+                            ${firstFiveEnums.length > 0 ? `
+                                <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
+                                    ${firstFiveEnums.map(e => `
+                                        <li class="py-1">
+                                            ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                                ${remainingEnums.length > 0 ? `
+                                    <button id="see-more-btn-${index}" class="text-blue-500 mt-2 hover:text-blue-700 transition duration-200" onclick="toggleSeeMore(${index})">
+                                        ${hasMatchInRemaining ? 'See Less' : 'See More'}
+                                    </button>
+                                    <ul id="extra-enums-${index}" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg ${hasMatchInRemaining ? '' : 'hidden'}">
+                                        ${remainingEnums.map(e => `
+                                            <li class="py-1">
+                                                ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                ` : ''}
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+
+                if (hasMatchInRemaining)
+                {
+                    const extraEnums = document.getElementById(`extra-enums-${index}`);
+                    const seeMoreBtn = document.getElementById(`see-more-btn-${index}`);
+                    if (extraEnums && seeMoreBtn)
+                    {
+                        extraEnums.classList.remove('hidden');
+                        seeMoreBtn.textContent = 'See Less';
+                    }
+                }
+            });
+
+            renderPagination();
+        }
+
+        function renderPagination()
+        {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(filteredData.length / config.rowsPerPage);
+
+            pagination.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <button onclick="changePage(currentPage - 1)" 
+                        class="px-6 py-3 ${currentPage === 1 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'} rounded-l-lg transition duration-200" 
+                        ${currentPage === 1 ? 'disabled' : ''}>
+                        Previous
+                    </button>
+                    <span class="px-4">${currentPage} / ${totalPages}</span>
+                    <button onclick="changePage(currentPage + 1)" 
+                        class="px-6 py-3 ${currentPage === totalPages ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'} rounded-r-lg transition duration-200" 
+                        ${currentPage === totalPages ? 'disabled' : ''}>
+                        Next
+                    </button>
+                </div>
+            `;
+        }
+
+        function changePage(pageNumber)
+        {
+            const totalPages = Math.ceil(filteredData.length / config.rowsPerPage);
+            if (pageNumber >= 1 && pageNumber <= totalPages)
+            {
+                currentPage = pageNumber;
+                renderTable();
+            }
+        }
+
+        function switchUrl(url, version)
+        {
+            currentUrl = url;
+            currentVersion = version;
+            document.getElementById('currentVersion').textContent = currentVersion;
+            document.getElementById('dropdownContent').classList.add('hidden');
+            fetchAndRenderData();
+        }
+
+        function toggleDropdown()
+        {
+            const dropdown = document.getElementById('dropdownContent');
+            dropdown.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function (event)
+        {
+            const dropdown = document.getElementById('dropdownContent');
+            const button = document.getElementById('dropdownButton');
+
+            if (!button.contains(event.target) && !dropdown.contains(event.target))
+            {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function showLoadingSpinner()
+        {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoadingSpinner()
+        {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        window.onload = fetchAndRenderData;
+    </script>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+    <div id="loading" class="hidden fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <nav class="bg-gray-800 shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <span class="text-white text-xl font-semibold">XML Schema Documentation</span>
+                <div class="relative">
+                    <button id="dropdownButton" onclick="toggleDropdown()"
+                        class="text-white hover:bg-gray-700 px-3 py-2 rounded-md transition duration-200 focus:outline-none">
+                        <span id="currentVersion">Version 6.0.0</span> ▼
+                    </button>
+                    <div id="dropdownContent"
+                        class="absolute mt-2 bg-white shadow-lg rounded-lg w-48 hidden transition duration-200">
+                        <a href="#"
+                            onclick="switchUrl('https://receiptservice.egretail.cloud/ARTSPOSLogSchema/6.0.0', 'Version 6.0.0')"
+                            class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Version 6.0.0</a>
+                        <a href="#"
+                            onclick="switchUrl('https://receiptservice.egretail.cloud/ARTSPOSLogSchema/2.0.0', 'Version 2.0.0')"
+                            class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Version 2.0.0</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto py-10 px-5">
+        <div class="flex justify-between mb-6">
+            <input type="text" id="searchInput" placeholder="Search..."
+                class="px-4 py-2 border border-gray-300 rounded-md w-1/2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                oninput="filterData(this.value)">
+        </div>
+
+        <div class="bg-white shadow-xl rounded-lg p-6">
+            <div class="overflow-x-auto">
+                <table class="table-auto w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+                            <th class="border px-4 py-3">Element</th>
+                            <th class="border px-4 py-3">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-sm">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="pagination" class="mt-6"></div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "dWR7CUhfpCo=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\fmont\\Desktop\\CProject\\DataConvertion\\DataConvertion.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\fmont\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
