@@ -28,3 +28,4 @@ C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\refint\DataConve
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.pdb
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.genruntimeconfig.cache
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\ref\DataConvertion.dll
+C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.sourcelink.json
