@@ -139,45 +139,54 @@
                 );
 
                 const nestedElements = type.nestedElements || [];
+                const attributes = type.attributes || [];
+
+                // Check if the parent description is null and if there are nested elements or attributes
+                const showNestedData = type.description === null && (nestedElements.length > 0 || attributes.length > 0);
 
                 tableBody.innerHTML += `
-                    <tr class="bg-white hover:bg-gray-50 transition duration-200">
-                        ${type.name !== 'N/A' ? `<td class="border px-4 py-3 font-medium">${highlightText(type.name, currentQuery)}</td>` : '<td></td>'}
-                        <td class="border px-4 py-3">
-                            ${type.description && type.description !== 'N/A' ? `<p class="text-gray-700">${highlightText(type.description, currentQuery)}</p>` : ''}
-                            ${firstFiveEnums.length > 0 ? `
-                                <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
-                                    ${firstFiveEnums.map(e => `
-                                        <li class="py-1">
-                                            ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                                ${remainingEnums.length > 0 ? `
-                                    <button id="see-more-btn-${index}" class="text-blue-500 mt-2 hover:text-blue-700 transition duration-200" onclick="toggleSeeMore(${index})">
-                                        ${hasMatchInRemaining ? 'See Less' : 'See More'}
-                                    </button>
-                                    <ul id="extra-enums-${index}" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg ${hasMatchInRemaining ? '' : 'hidden'}">
-                                        ${remainingEnums.map(e => `
-                                            <li class="py-1">
-                                                ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                ` : ''}
-                            ` : ''}
-                            ${nestedElements.length > 0 ? `
-                                <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
-                                    ${nestedElements.map(e => `
-                                        <li class="py-1">
-                                            ${highlightText(e.name, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            ` : ''}
-                        </td>
-                    </tr>
-                `;
+            <tr class="bg-white hover:bg-gray-50 transition duration-200">
+                ${type.name !== 'N/A' ? `<td class="border px-4 py-3 font-medium">${highlightText(type.name, currentQuery)}</td>` : '<td></td>'}
+                <td class="border px-4 py-3">
+                    ${type.description && type.description !== 'N/A' ? `<p class="text-gray-700">${highlightText(type.description, currentQuery)}</p>` : ''}
+                    ${showNestedData ? `
+                        <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
+                            ${nestedElements.map(e => `
+                                <li class="py-1">
+                                    ${highlightText(e.name, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
+                                </li>
+                            `).join('')}
+                            ${attributes.map(a => `
+                                <li class="py-1">
+                                    ${highlightText(a.name, currentQuery)} - ${highlightText(a.description || 'N/A', currentQuery)}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : ''}
+                    ${firstFiveEnums.length > 0 ? `
+                        <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
+                            ${firstFiveEnums.map(e => `
+                                <li class="py-1">
+                                    ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        ${remainingEnums.length > 0 ? `
+                            <button id="see-more-btn-${index}" class="text-blue-500 mt-2 hover:text-blue-700 transition duration-200" onclick="toggleSeeMore(${index})">
+                                ${hasMatchInRemaining ? 'See Less' : 'See More'}
+                            </button>
+                            <ul id="extra-enums-${index}" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg ${hasMatchInRemaining ? '' : 'hidden'}">
+                                ${remainingEnums.map(e => `
+                                    <li class="py-1">
+                                        ${highlightText(e.value, currentQuery)} - ${highlightText(e.description || 'N/A', currentQuery)}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        ` : ''}
+                    ` : ''}
+                </td>
+            </tr>
+        `;
 
                 if (hasMatchInRemaining)
                 {
