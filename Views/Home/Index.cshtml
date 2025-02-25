@@ -119,37 +119,35 @@
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
-        function renderTable()
-        {
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
+       function renderTable() {
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
 
-            const paginatedData = filteredData.slice((currentPage - 1) * config.rowsPerPage, currentPage * config.rowsPerPage);
+    const paginatedData = filteredData.slice((currentPage - 1) * config.rowsPerPage, currentPage * config.rowsPerPage);
 
-            paginatedData.forEach((type, index) =>
-            {
-                if (type.name === 'N/A' && type.description === 'N/A') return;
+    paginatedData.forEach((type, index) => {
+        if (type.name === 'N/A' && type.description === 'N/A') return;
 
-                const enumerations = type.enumerations || [];
-                const firstFiveEnums = enumerations.slice(0, config.maxEnumerations);
-                const remainingEnums = enumerations.slice(config.maxEnumerations);
+        const enumerations = type.enumerations || [];
+        const firstFiveEnums = enumerations.slice(0, config.maxEnumerations);
+        const remainingEnums = enumerations.slice(config.maxEnumerations);
 
-                const hasMatchInRemaining = currentQuery && remainingEnums.some(e =>
-                    e.value.toLowerCase().includes(currentQuery) || e.description.toLowerCase().includes(currentQuery)
-                );
+        const hasMatchInRemaining = currentQuery && remainingEnums.some(e =>
+            e.value.toLowerCase().includes(currentQuery) || e.description.toLowerCase().includes(currentQuery)
+        );
 
-                const nestedElements = type.nestedElements || [];
-                const attributes = type.attributes || [];
+        const nestedElements = type.nestedElements || [];
+        const attributes = type.attributes || [];
 
-                // Check if the parent description is null and if there are nested elements or attributes
-                const showNestedData = type.description === null && (nestedElements.length > 0 || attributes.length > 0);
+        // Always show nested data if it exists, regardless of the parent description
+        const hasNestedData = nestedElements.length > 0 || attributes.length > 0;
 
-                tableBody.innerHTML += `
+        tableBody.innerHTML += `
             <tr class="bg-white hover:bg-gray-50 transition duration-200">
                 ${type.name !== 'N/A' ? `<td class="border px-4 py-3 font-medium">${highlightText(type.name, currentQuery)}</td>` : '<td></td>'}
                 <td class="border px-4 py-3">
                     ${type.description && type.description !== 'N/A' ? `<p class="text-gray-700">${highlightText(type.description, currentQuery)}</p>` : ''}
-                    ${showNestedData ? `
+                    ${hasNestedData ? `
                         <ul class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-lg">
                             ${nestedElements.map(e => `
                                 <li class="py-1">
@@ -188,21 +186,18 @@
             </tr>
         `;
 
-                if (hasMatchInRemaining)
-                {
-                    const extraEnums = document.getElementById(`extra-enums-${index}`);
-                    const seeMoreBtn = document.getElementById(`see-more-btn-${index}`);
-                    if (extraEnums && seeMoreBtn)
-                    {
-                        extraEnums.classList.remove('hidden');
-                        seeMoreBtn.textContent = 'See Less';
-                    }
-                }
-            });
-
-            renderPagination();
+        if (hasMatchInRemaining) {
+            const extraEnums = document.getElementById(`extra-enums-${index}`);
+            const seeMoreBtn = document.getElementById(`see-more-btn-${index}`);
+            if (extraEnums && seeMoreBtn) {
+                extraEnums.classList.remove('hidden');
+                seeMoreBtn.textContent = 'See Less';
+            }
         }
+    });
 
+    renderPagination();
+}
         function renderPagination()
         {
             const pagination = document.getElementById('pagination');
