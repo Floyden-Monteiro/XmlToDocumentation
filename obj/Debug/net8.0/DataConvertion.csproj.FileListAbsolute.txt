@@ -29,3 +29,6 @@ C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.p
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.genruntimeconfig.cache
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\ref\DataConvertion.dll
 C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\DataConvertion.sourcelink.json
+C:\Users\fmont\Desktop\CProject\DataConvertion\bin\Debug\net8.0\DataConvertion.staticwebassets.endpoints.json
+C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\fmont\Desktop\CProject\DataConvertion\obj\Debug\net8.0\staticwebassets\msbuild.DataConvertion.Microsoft.AspNetCore.StaticWebAssetEndpoints.props
